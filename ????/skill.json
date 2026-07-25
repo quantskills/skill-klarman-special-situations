@@ -1,0 +1,8 @@
+{
+  "name": "skill-klarman-special-situations",
+  "version": "7.4.0",
+  "build_type": "hybrid",
+  "entrypoint": "scripts.build:run",
+  "data_source": "panda_data",
+  "production_output": "生产产物/数据库.parquet"
+}
