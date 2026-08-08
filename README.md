@@ -128,6 +128,22 @@ flowchart LR
 
 ---
 
+## `get_restricted_list` 套餐配额降级策略
+
+`get_restricted_list` 用于识别定增解禁日期、解禁数量和供给压力。部分 Panda Data 套餐可能偶发返回配额或限流错误；这不是“没有解禁事件”，也不能用空结果替代真实数据。
+
+| 阶段 | 系统行为 | 使用者应如何解读 |
+|---|---|---|
+| 识别与重试 | 命中“限额 / 套餐 / quota / rate limit”后标记 `quota_or_rate_limit`，按 `max_api_attempts` 有界退避重试；可设 1–4 次，默认 2 次 | 不无限重试，也不隐瞒失败原因 |
+| 重试耗尽 | `source.capabilities.get_restricted_list.status=unavailable`，并写入 `result_type=coverage_gap`、`result_value=insufficient_evidence` 的记录，含 `failure_class` 与 `attempts` | 本次定增解禁覆盖不完整，不能把空结果理解为“无解禁” |
+| 研究与风险输出 | 本次不会根据缺失的解禁表生成或刷新 `private_placement_supply_risk` 风险卡；`research_digest` 标记为 `coverage_status=partial` | 风险榜中没有定增解禁卡，不代表没有供给压力 |
+| 生产健康 | P4 健康报告的 `coverage_gaps` 会列出 `get_restricted_list`，并给出 `coverage_gap` 告警 | 即使 Parquet 版本与结构有效，也要同时检查覆盖缺口，不能只看 `--check-production` 的文件状态 |
+| 恢复 | 等待套餐配额恢复或完成权限调整后重跑完整扫描；同一决策日的补跑必须重新使用该日可见数据 | 不切换未批准的第三方数据源，不把旧快照混入当前快照，也不手工填“零解禁” |
+
+其他三类事件仍可按各自接口继续扫描，但整次快照必须明确为部分覆盖。旧的完整快照只可作为带日期的历史审计材料，不能伪装成当前定增解禁结论。
+
+---
+
 ## 快速开始
 
 ### 1. 安装开发版 Skill
@@ -234,7 +250,8 @@ skill-klarman-special-situations/
 │   ├── 录制讲稿.md                     # 视频讲解稿
 │   └── operations/                    # 健康报告、运行清单、证据队列和点时账本
 ├── CONTRIBUTING.md                    # 协作与提交规则
-└── SECURITY.md                        # 凭据和敏感数据处置规则
+├── SECURITY.md                        # 凭据和敏感数据处置规则
+└── 发布说明.md                         # 版本交付与接口降级说明
 ```
 
 ---
@@ -248,6 +265,7 @@ skill-klarman-special-situations/
 | 失败封闭 | 核心承保证据缺失或失败时，保持不完整，不以评分掩盖缺失 |
 | 定增不当套利 | 定增折价和参与者浮盈只用于供给风险分析，不转为二级市场机会 |
 | 时间口径锁定 | 实时研究与历史回放使用不同的点时证据口径，禁止混用 |
+| 套餐配额降级 | `get_restricted_list` 配额耗尽时输出 `quota_or_rate_limit` 与 `coverage_gap`；不把缺失解读为无解禁，不用旧数据伪装为当前覆盖 |
 | Alpha 消费边界 | 只有 `qualified_special_situation` 原始事件行可被 Alpha 读取 |
 | 生产结果只读 | 多人查询读取 Parquet；不手工修改、不重复触发重计算 |
 | 凭据不落盘 | 不提交 Panda Data 用户名、密码、令牌、环境文件或原始服务端错误内容 |

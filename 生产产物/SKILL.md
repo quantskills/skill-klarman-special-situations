@@ -58,10 +58,19 @@ tags: [quant, build, production, seth-klarman, special-situations]
 - 只有 `result_json.scan_scope.type=all_a_share` 才是全市场生产扫描；定向诊断结果不得冒充全市场结果。
 - 消费方按 `trade_date + result_type + result_value` 过滤所需事件。
 
+### `get_restricted_list` 套餐配额降级
+
+- `--check-production` 的 `status=current` 只说明版本、结构和主键可读，不等于 `get_restricted_list` 覆盖完整。
+- 若当前快照包含 `result_type=coverage_gap` 且 `result_json.api=get_restricted_list`，或健康报告的 `coverage_gaps` 包含该接口，则定增解禁覆盖为部分：风险榜没有定增解禁卡不能解读为“没有解禁”或“没有供给压力”。
+- 该情况会以 `failure_class=quota_or_rate_limit`、`result_value=insufficient_evidence` 和 `coverage_status=partial` 留痕；P4 健康报告会产生 `coverage_gap` 告警。
+- 消费者可以继续读取其他类别的独立记录，但必须披露本次快照的定增解禁覆盖缺口；不得将旧快照拼接为当前数据，也不得使用未批准的替代数据源。
+- 等套餐配额恢复或权限调整后，重新运行全市场生产任务并确认覆盖缺口消失，再将新快照作为完整定增解禁覆盖使用。
+
 ## 禁止行为
 
 - 不允许多人查询时重复触发扫描或重计算。
 - 不允许手工修改 Parquet。
 - 不允许把 `risk_watch` 或 `underwriting_incomplete` 当作投资建议。
+- 不允许因 `get_restricted_list` 配额限制而把空的定增解禁风险列表解释为无风险，或回填旧快照冒充当前覆盖。
 - 不得输出买卖方向、具体仓位、胜率或收益承诺。
 - 生产结果异常时必须提示 `trade_date` 和异常原因。

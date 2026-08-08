@@ -48,6 +48,17 @@ BUILD 输入必须来自 Panda Data 或调用方传入的标准结构化数据�
 
 `config` 可选：`evidence_dir` / `evidence_provider`、`policy_path`、`output_path`、`manifest_dir`、`checkpoint_dir`、`checkpoint_batch_size`（1–200）、`max_api_attempts`（1–4）。库入口不读取环境变量；Panda Data 凭证只从 CLI 子进程环境读入内存并立刻清除。回购、举牌和股东增减持只写入 `panda_non_core_context`，不得改变承保状态。
 
+### `get_restricted_list` 套餐配额降级
+
+`get_restricted_list` 是定增解禁供给风险的必需输入。服务端错误含“限额 / 套餐 / quota / rate limit”时，P0 将其分类为 `quota_or_rate_limit`，按 `max_api_attempts`（默认 2，范围 1–4）有界退避重试。仍失败时：
+
+- `source.capabilities.get_restricted_list` 记录 `status=unavailable`、`failure_class=quota_or_rate_limit`、异常类型和尝试次数；
+- 产出一条 `result_type=coverage_gap`、`result_value=insufficient_evidence` 的记录，定增解禁链路不生成或刷新 `private_placement_supply_risk` 风险卡；
+- `research_digest` 标记为部分覆盖，P4 健康报告列出 `get_restricted_list` 覆盖缺口；风险榜没有定增卡不等于没有解禁；
+- 其他事件类别可继续扫描，但调用方必须披露定增解禁覆盖不完整；不得切换未批准数据源、手工填零，或把旧快照混入当前决策日。
+
+配额恢复后，对同一决策日需要重新执行完整、点时一致的扫描；只把旧完整快照作为带日期的历史审计材料。完整字段与恢复契约见 [API 与承保口径](references/api_guide.md)。
+
 ## 输出
 
 `run()` 返回稳定的 BUILD envelope。混合形态：全 A 股扫描可同时写入 `生产产物/数据库.parquet`；定向证券扫描默认禁止写入生产库。
@@ -108,7 +119,7 @@ python scripts/build.py --check-production
 
 | 阶段 | 已实现能力 | 验收口径 |
 |---|---|---|
-| P0 接口治理 | Panda 失败分类、1–4 次有界重试、coverage gap | 失败只记录安全分类、异常类型、尝试次数；不落凭据或服务端原文 |
+| P0 接口治理 | Panda 失败分类、1–4 次有界重试、coverage gap | `get_restricted_list` 套餐配额耗尽时记为 `quota_or_rate_limit` + `coverage_gap`，不把缺失解释为无解禁；不落凭据或服务端原文 |
 | P1 可恢复全市场任务 | 按证券批次 Parquet 检查点、原子运行清单 | 同参数重跑复用已完成分片；成功/失败均关闭 manifest |
 | P2 官方公告证据包 | `EvidenceAtom` 校验与补证队列 | 只有核心门完备的包进入承保；占位哈希和坏 schema 失败封闭 |
 | P3 点时验证 | 生产事件账本、knowledge cutoff、右删失 | 非 qualified 不计算收益；尚未解决事件不得伪造结果 |

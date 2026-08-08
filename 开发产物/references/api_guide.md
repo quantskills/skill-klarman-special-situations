@@ -18,7 +18,7 @@ Panda Data 是本 BUILD 唯一数据源。SDK：`panda_data==0.0.12`。接口依
 | 接口 | 必需入参 | BUILD 使用的返回字段 | 用途与边界 |
 |---|---|---|---|
 | `get_stock_private_placement` | `start_date`, `end_date`；`symbol` 可选 | `symbol`, `announcement_date`, `issue_type`, `issue_status`, `listed_date`, `issued_shares`, `issue_price`, `approval_date` | 识别定增发行与参与者浮盈 |
-| `get_restricted_list` | `start_date`, `end_date`；`symbol`, `market` 可选 | `date`, `relieve_date`, `shareholder`, `shareholder_type`, `relieve_shares`, `actual_relieve_shares`, `relieve_reason` | 识别未来解禁及实际流通数量 |
+| `get_restricted_list` | `start_date`, `end_date`；`symbol`, `market` 可选 | `date`, `relieve_date`, `shareholder`, `shareholder_type`, `relieve_shares`, `actual_relieve_shares`, `relieve_reason` | 识别未来解禁及实际流通数量；套餐配额限制时按下述策略降级，不以空表代表无解禁 |
 | `get_share_float` | `start_date`, `end_date`；`symbol` 可选 | `date`, `circulation_a`, `free_circulation`, `total`, `total_a` | `circulation_a` 是解禁压力比例的流通 A 股分母 |
 | `get_stock_csrc_approval` | `start_date`, `end_date` | `publish_date`, `announcement_category`, `announcement_level`, `announcement_title`, `announcement_number`, `announcement_content`, `attachment_link`, `announcement_link` | 只作为监管催化剂和官方链接 |
 | `get_stock_material_contract` | `start_date`, `end_date`；`symbol` 可选 | `symbol`, `info_date`, `info_id`, `project_progress`, `project_name`, `contract_title` | 只按证券代码和关键词补充背景 |
@@ -33,6 +33,16 @@ Panda Data 是本 BUILD 唯一数据源。SDK：`panda_data==0.0.12`。接口依
 | `get_repurchase` | 日期范围；`symbol` 可选 | `date`, `procedure`, `purpose`, `buy_back_volume`, `value_floor`, `value_ceiling`, `price_floor`, `price_ceiling`, `buy_back_percent` | 非核心回购背景 |
 | `get_stock_equity_placard` | 日期范围；`symbol` 可选 | `info_date`, `shareholder_name`, `actual_controller`, `total_share_ratio`, `average_price`, `share_holding_ratio`, `increase_plan` | 非核心举牌和控制权背景；当前 SDK 内部兼容 `get_equity_placard` |
 | `get_stock_shareholder_change` | 日期范围；`symbol` 可选 | `info_date`, `progress`, `direction`, `change_up_limit`, `ratio_up_limit`, `reason` | 非核心股东供需背景 |
+
+## `get_restricted_list` 套餐配额降级契约
+
+该接口是 `private_placement_supply_risk` 的核心输入。若 Panda Data 返回“限额 / 套餐 / quota / rate limit”类错误，执行以下失败封闭策略：
+
+1. **分类与重试**：记录失败分类 `quota_or_rate_limit`，按 `max_api_attempts` 做有界退避重试。默认值为 2，允许范围是 1–4；认证失败不重试，其他不可重试错误按其分类直接降级。
+2. **调用结果**：仍失败时，`source.capabilities["get_restricted_list"]` 固定记录 `status="unavailable"`、`failure_class="quota_or_rate_limit"`、`error_type` 和 `attempts`。不持久化服务端原文、凭证或请求敏感信息。
+3. **生产记录**：生成 `result_type="coverage_gap"`、`result_value="insufficient_evidence"` 的独立记录；其 `result_json` 包含 `api="get_restricted_list"`、`failure_class`、`attempts`、`discovery_status="coverage_gap"` 和 `underwriting_status="underwriting_incomplete"`。
+4. **业务降级**：本次获取失败后，定增发行仍可被扫描，但不得从空解禁表推导“无解禁”。没有可验证的解禁日期和数量时，不生成或刷新 `private_placement_supply_risk`；因此 `risk_watchlist` 中缺少定增卡不代表不存在供给风险。`research_digest` 聚合记录标记 `coverage_status="partial"`，其余事件类别按各自接口继续运行。
+5. **消费与恢复**：P4 健康报告将 `get_restricted_list` 写入 `coverage_gaps` 并产生 `coverage_gap` 告警，通常状态为 `attention`（除非另有 critical 告警）。消费者不能只凭 `--check-production` 的结构状态就视为定增覆盖完整，必须同时检查 `source.capabilities`、`coverage_gap` 记录或 `validation/operations/health_latest.json`。待套餐额度恢复或权限调整后，重新执行全市场、点时一致的扫描；不得自动切换第三方数据源、手工补零，或把旧快照混入当前决策日结果。
 
 ## 承保门与状态
 
@@ -78,7 +88,7 @@ Panda Data 是本 BUILD 唯一数据源。SDK：`panda_data==0.0.12`。接口依
 
 ## P0 接口失败语义
 
-接口能力状态额外记录：`attempts` 与 `failure_class`。失败分类固定为 `quota_or_rate_limit`、`transient_transport`、`api_unavailable`、`data_or_service_error`。前两类最多按 `max_api_attempts` 有界退避；认证失败立即抛出。持久化内容只保留安全分类和异常类名，不保存 Panda 服务端原始消息。
+接口能力状态额外记录：`attempts` 与 `failure_class`。失败分类固定为 `quota_or_rate_limit`、`transient_transport`、`api_unavailable`、`data_or_service_error`。前两类最多按 `max_api_attempts` 有界退避；认证失败立即抛出。`get_restricted_list` 的套餐配额限制必须走上述独立 `coverage_gap` 降级，不得用空表宣称没有解禁。持久化内容只保留安全分类和异常类名，不保存 Panda 服务端原始消息。
 
 ## P1 运行与恢复契约
 
