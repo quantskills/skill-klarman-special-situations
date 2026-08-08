@@ -1,6 +1,11 @@
 # 克拉曼特殊情况投资 Skill
 
+**简体中文** | [English](README.en.md)
+
 > 基于 Seth Klarman 特殊情况投资框架的 A 股事件驱动研究 Skill。它将定增解禁、重组借壳、分拆上市和困境反转转化为可复核的研究任务：识别催化剂，核验基本面和公告证据，区分潜在价值与供给或失败风险，并明确下一步需要补齐的关键事实。
+
+**创建者 / 维护者**：[`dijia702`](https://github.com/dijia702)<br>
+**项目状态**：QuantSkills 社区项目；未经社区审核，不代表官方、认证、验证或背书。
 
 <p align="center">
   <img alt="data version" src="https://img.shields.io/badge/data__version-7.4.0-1976d2">
@@ -234,7 +239,18 @@ risks = result["research_digest"]["risk_watchlist"]
 
 ```text
 skill-klarman-special-situations/
-├── README.md                         # 项目说明、使用方式与研究边界
+├── SKILL.md                          # 根级 Skill 声明、工作流与跨运行时约束
+├── README.md                         # 中文项目说明、使用方式与研究边界
+├── README.en.md                      # English documentation
+├── LICENSE                           # GNU GPL v3.0（GPL-3.0-only）
+├── skill.json                        # 版本、入口、许可证与上游元数据
+├── skill.yml                         # QuantSkills 社区与跨运行时元数据
+├── agents/
+│   ├── openai.yaml                   # OpenAI / Codex 界面入口
+│   ├── cursor-rule.mdc               # Cursor 规则入口
+│   └── portable-loader.md            # Hermes / OpenClaw 通用加载入口
+├── scripts/                           # 根级可运行入口、扫描、承保与验证脚本
+├── references/                        # Panda Data 接口契约与事件证据模板
 ├── 开发产物/
 │   ├── SKILL.md                       # 开发版 Skill：工作流、输入输出与约束
 │   ├── skill.json                     # 版本、入口、数据源与生产输出
@@ -282,6 +298,19 @@ skill-klarman-special-situations/
 | 困境反转 | 经营或财务困境企业出现风险警示、利润或审计质量改善 | 将其作为研究入口，再核资产回收、担保顺位、优先债务和完全稀释后的股权回收 |
 
 ---
+
+## 跨运行时入口
+
+| 运行时 | 入口与安装方式 |
+|---|---|
+| Codex / Claude Code | 直接加载仓库根目录 `SKILL.md`，调用名为 `$klarman-special-situations` |
+| Cursor | 将仓库放入 `.cursor/skills/klarman-special-situations`，使用 `agents/cursor-rule.mdc` |
+| Hermes / OpenClaw | 优先加载完整 Skill 目录；不支持原生发现时使用 `agents/portable-loader.md` |
+| OpenAI / Codex 界面 | 使用 `agents/openai.yaml` 提供展示名称、简介和默认提示词 |
+
+## 许可证
+
+本项目采用 GNU General Public License v3.0，SPDX 标识为 `GPL-3.0-only`。完整条款见 [LICENSE](LICENSE)。
 
 ## 免责声明
 

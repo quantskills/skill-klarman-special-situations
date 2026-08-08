@@ -56,4 +56,3 @@ def load_policy(path: str | Path | None = None) -> ResearchPolicy:
     if unknown:
         raise ValueError(f"policy 含未知字段: {unknown}")
     return ResearchPolicy(**dict(raw))
-

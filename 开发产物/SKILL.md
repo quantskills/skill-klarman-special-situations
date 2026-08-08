@@ -1,7 +1,24 @@
 ---
-name: build-Q51
-description: 当需要研究 A 股定增解禁、重组借壳、分拆、困境反转四类特殊情况时使用此 skill。基于 Panda Data 与官方公告证据，执行点时、失败封闭的 Klarman 承保：保守估值、失败价值、分散押注。不输出买卖指令或收益承诺。
-tags: [quant, build, seth-klarman, special-situations, event-driven, margin-of-safety]
+name: klarman-special-situations
+description: Seth Klarman special-situations research skill for A-share private-placement unlocks, restructurings and backdoor listings, spin-offs, and distressed turnarounds. Use for 克拉曼特殊情况投资、定增解禁、重组借壳、分拆上市、困境反转、事件驱动研究、研究候选排序或独立风险观察。Uses Panda Data and official announcement evidence, applies point-in-time and fail-closed underwriting, and never produces trading instructions or return promises.
+license: GPL-3.0-only
+metadata:
+  organization: QuantSkills
+  organization_url: https://github.com/quantskills
+  repository: skill-klarman-special-situations
+  repository_url: https://github.com/quantskills/skill-klarman-special-situations
+  project_type: skill
+  collection: special-situations
+  creator: dijia702
+  creator_url: https://github.com/dijia702
+  maintainer: dijia702
+  maintainer_url: https://github.com/dijia702
+  tags:
+    - quant
+    - seth-klarman
+    - special-situations
+    - event-driven
+    - margin-of-safety
 ---
 
 # 克拉曼特殊情况研究
@@ -11,6 +28,14 @@ tags: [quant, build, seth-klarman, special-situations, event-driven, margin-of-s
 - 工具类型：分析报告型 BUILD（混合形态）
 - 解决问题：把 Seth Klarman《安全边际》里的分拆/破产/重组/定增/私有化错误定价套利框架落到 A 股，用点时证据和保守估值筛选合格候选。
 - 使用对象：交易 agent、Alpha、人工复盘。
+
+## 维护与项目状态
+
+- 上游仓库：`quantskills/skill-klarman-special-situations`。
+- 创建者与维护者：[`dijia702`](https://github.com/dijia702)。
+- 项目身份：QuantSkills 社区项目。未经社区维护者审核，不得表述为官方、认证、验证、背书或保证可用于生产交易的项目。
+- 支持场景：A 股定增解禁供给风险、重组/借壳、分拆上市、困境反转的事件扫描、研究排序、证据补齐和严格承保。
+- 重要限制：输出仅供研究、教育、复核和系统集成，不构成投资建议；不保证数据持续可用、候选有效或任何投资收益。
 
 ## 原理
 
@@ -113,7 +138,7 @@ python scripts/build.py --check-production
 ## 严格交付验收
 
 - 开发包路径：`开发产物/`；生产包路径：`生产产物/`。
-- 使用 `python scripts/validate_build.py` 执行离线 BUILD V2 验收；该验收器保留本规则要求的 `tags` 字段，不使用面向 Codex skill 的通用 frontmatter 校验器。
+- 使用 `python scripts/validate_build.py` 执行离线 BUILD V2 验收；根声明另使用通用 Skill 校验器检查运行时兼容性。
 
 ## P0–P4 生产链
 
@@ -136,6 +161,13 @@ python scripts/production_job.py --as-of 20260724 --start 20250724 --evidence-di
 展示入口：`validation/production_dashboard.html`。它只读取生产 Parquet 与 `validation/operations/`，不会触发 Panda 查询；`validation/dashboard.html` 是历史验证扫描看板，不代表当前生产状态。
 
 演示讲解页：在 BUILD 根目录运行 `python scripts/demo_html.py`，一键生成 `validation/skill_demo.html`。该脚本只读取最新的 `生产产物/数据库.parquet` 中 `data_version=7.4.0` 的 `research_digest`，不读取凭证、不连接 Panda Data、不触发扫描；可用 `--production-path` 和 `--output` 指向其他已有快照。录制讲解按 `validation/录制讲稿.md`，重点展示研究候选、独立风险观察和承保边界。
+
+## 跨运行时使用
+
+- Codex 与 Claude Code：直接加载本目录的 `SKILL.md`；技能名为 `$klarman-special-situations`。
+- Cursor：把完整目录安装到 `.cursor/skills/klarman-special-situations`，使用 `agents/cursor-rule.mdc` 作为项目规则入口。
+- Hermes 与 OpenClaw：优先从各自的 Skill 目录加载完整文件夹；不支持原生发现时，使用 `agents/portable-loader.md` 作为加载提示。
+- OpenAI/Codex 界面元数据位于 `agents/openai.yaml`。调整触发词、工作流或风险边界时，同步维护所有运行时入口。
 
 ## 依赖
 
