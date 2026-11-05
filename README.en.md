@@ -143,3 +143,6 @@ This project is licensed under the GNU General Public License v3.0, SPDX identif
 ## Disclaimer
 
 All outputs are generated from public data, official announcement evidence, and rule-based analysis for research, education, review, and system integration only. Nothing in this repository constitutes investment advice. Special-situation events may have high failure, liquidity, legal, and information risks; users remain responsible for independent valuation, portfolio, risk, and compliance decisions.
+
+
+Pandadata compatibility maintenance: [abgyjaguo](https://github.com/abgyjaguo). Existing authorship is retained.

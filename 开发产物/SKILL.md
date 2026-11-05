@@ -171,7 +171,7 @@ python scripts/production_job.py --as-of 20260724 --start 20250724 --evidence-di
 
 ## 依赖
 
-- Panda Data（`panda_data==0.0.12`）
+- Panda Data（`panda_data==1.0.6`）
 - numpy、pandas、pyyaml
 - 项目指定数据源：如接口权限或字段口径不明确，咨询项目工作人员
 
