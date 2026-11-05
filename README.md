@@ -315,3 +315,6 @@ skill-klarman-special-situations/
 ## 免责声明
 
 本 Skill 基于公开数据、官方公告证据和规则化分析生成，所有输出仅供研究、复核和系统集成使用，不构成任何投资建议。特殊情况事件的失败率、流动性和信息不确定性均可能很高，调用方必须独立处理估值、组合、风险和合规约束。
+
+
+Pandadata 兼容维护：[abgyjaguo](https://github.com/abgyjaguo)，保留原项目作者署名。

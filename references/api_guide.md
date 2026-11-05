@@ -1,6 +1,6 @@
 # API 与承保口径
 
-Panda Data 是本 BUILD 唯一数据源。SDK：`panda_data==0.0.12`。接口依据为 `E:\quantskill\接口文档(1).md`（修改时间 2026-07-21 17:02:01，SHA-256 `694C193EC3714F1B25D20BBE7F03CC8D3932ECFBE5C2CB881AB15B66A0879D16`）。运行时同时兼容 `panda_data` 与 `panda-data` 两种发行包元数据命名；认证凭证从进程环境变量读入内存后立刻清除。可选 API 不可用时输出 `coverage_gap`，不切换数据源。
+Panda Data 是本 BUILD 唯一数据源。SDK：`panda_data==1.0.6`。接口依据为 `E:\quantskill\接口文档(1).md`（修改时间 2026-07-21 17:02:01，SHA-256 `694C193EC3714F1B25D20BBE7F03CC8D3932ECFBE5C2CB881AB15B66A0879D16`）。运行时同时兼容 `panda_data` 与 `panda-data` 两种发行包元数据命名；认证凭证从进程环境变量读入内存后立刻清除。可选 API 不可用时输出 `coverage_gap`，不切换数据源。
 
 ## 事件类型与所需接口
 
